@@ -13,6 +13,17 @@
 # Usage: pii-audit.sh [path ...]   (default: the kit root)
 set -uo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
+
+# --filename-only: skip content greps; only check file NAMES against the
+# local deny-list prefixes. Useful for sweeping a whole image tree where
+# stock upstream files (with public author credits) would false-positive
+# the content rules.
+FILENAME_ONLY=0
+if [ "${1:-}" = "--filename-only" ]; then
+  FILENAME_ONLY=1
+  shift
+fi
+
 TARGETS=("$@")
 if [ ${#TARGETS[@]} -eq 0 ]; then
   TARGETS=("$(cd "$HERE/.." && pwd)")
@@ -29,19 +40,25 @@ clean_filter() {
     | grep -vE "$ALLOW"
 }
 
-_h1=$(grep -rniE --exclude-dir=.git --exclude-dir=release "$GENERIC_CI" "${TARGETS[@]}" 2>/dev/null | clean_filter || true)
-_h2=$(grep -rnE  --exclude-dir=.git --exclude-dir=release "$GENERIC_CS" "${TARGETS[@]}" 2>/dev/null | clean_filter || true)
-HITS="$_h1"$'\n'"$_h2"
+if [ "$FILENAME_ONLY" -eq 0 ]; then
+  _h1=$(grep -rniE --exclude-dir=.git --exclude-dir=release "$GENERIC_CI" "${TARGETS[@]}" 2>/dev/null | clean_filter || true)
+  _h2=$(grep -rnE  --exclude-dir=.git --exclude-dir=release "$GENERIC_CS" "${TARGETS[@]}" 2>/dev/null | clean_filter || true)
+  HITS="$_h1"$'\n'"$_h2"
+else
+  HITS=""
+fi
 
 if [ -f "$LOCAL_LIST" ]; then
   echo "strict mode: local deny-list active"
   while IFS= read -r pat; do
     [ -z "$pat" ] && continue
     case "$pat" in \#*) continue;; esac
-    h=$(grep -rniF --exclude-dir=.git --exclude-dir=release "$pat" "${TARGETS[@]}" 2>/dev/null \
-        | grep -v "Binary file" | grep -v "[.]sha256:" \
-        | grep -v "pii-audit[.]local" || true)
-    [ -n "$h" ] && HITS="$HITS"$'\n'"$h"
+    if [ "$FILENAME_ONLY" -eq 0 ]; then
+      h=$(grep -rniF --exclude-dir=.git --exclude-dir=release "$pat" "${TARGETS[@]}" 2>/dev/null \
+          | grep -v "Binary file" | grep -v "[.]sha256:" \
+          | grep -v "pii-audit[.]local" || true)
+      [ -n "$h" ] && HITS="$HITS"$'\n'"$h"
+    fi
     fh=$(find "${TARGETS[@]}" -path "*/.git" -prune -o -iname "*${pat}*" -print 2>/dev/null || true)
     [ -n "$fh" ] && HITS="$HITS"$'\n'"FNAME: $fh"
   done < "$LOCAL_LIST"

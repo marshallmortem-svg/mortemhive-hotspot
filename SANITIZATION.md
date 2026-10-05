@@ -4,7 +4,9 @@ This image and kit are built to ship clean, and the build enforces it:
 
 - **`build/pii-audit.sh`** runs **inside every image build** (after all files,
   including the boot-partition README, are in place) and the build fails if it
-  hits anything.
+  hits anything. It content-scans exactly the files this kit installs, then
+  runs a filename sweep over the whole card for personal-looking names.
+  (Base-image stock files are upstream content and are not re-audited.)
 - The audit has two layers:
   1. **Generic patterns** (safe to publish): credential-looking lines
      (`psk=`/`Password=`/tokens), callsign shapes, decimal coordinate pairs,

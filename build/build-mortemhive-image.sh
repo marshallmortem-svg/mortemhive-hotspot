@@ -110,7 +110,11 @@ FILES=(
   "$WORK/root/etc/systemd/system.conf.d/watchdog.conf" "$WORK/root/etc/sysctl.d/99-wedge-autoreap.conf"
   "$WORK/boot/MORTEMHIVE-README.txt"
 )
-bash "$KIT/build/pii-audit.sh" "${FILES[@]}" "$WORK/boot" "$WORK/root/usr/local/sbin"
+# content-scan exactly the files this kit installs (stock upstream files have
+# public author credits that would false-positive); then sweep the WHOLE card
+# for personal-looking file NAMES.
+bash "$KIT/build/pii-audit.sh" "${FILES[@]}"
+bash "$KIT/build/pii-audit.sh" --filename-only "$WORK/root" "$WORK/boot"
 
 echo "== [8/9] unmount + repack =="
 sync
