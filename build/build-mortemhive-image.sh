@@ -61,9 +61,8 @@ systemctl stop hotspot-oled.service 2>/dev/null
 mount -o remount,rw / 2>/dev/null
 apt-get update -qq
 apt-get install -y libopenjp2-7 python3-pip
-PINS='"luma.oled==3.16.0" "luma.core==2.6.0" "pillow==11.2.1" "smbus2==0.6.1" "RPi.GPIO==0.7.0"'
-pip3 install --default-timeout 100 $PINS \
-  || pip3 install --break-system-packages --default-timeout 100 $PINS
+pip3 install --default-timeout 100 luma.oled==3.16.0 luma.core==2.6.0 pillow==11.2.1 smbus2==0.6.1 RPi.GPIO==0.7.0 \
+  || pip3 install --break-system-packages --default-timeout 100 luma.oled==3.16.0 luma.core==2.6.0 pillow==11.2.1 smbus2==0.6.1 RPi.GPIO==0.7.0
 sync; mount -o remount,ro / 2>/dev/null
 if python3 -c "import luma.oled" 2>/dev/null; then
   systemctl restart hotspot-oled.service
