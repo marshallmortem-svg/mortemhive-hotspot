@@ -98,25 +98,26 @@ Pi-Star 4.2.3 / kernel 5.10.103 — predates CVE-2026-31648, the kernel bug
 that makes the current "latest" images lock up under load.
 
 *** READ THIS FIRST ***
-1. WiFi: connect the Pi to your network BEFORE (or immediately after) first
-   boot — either drop a wpa_supplicant.conf on this boot volume before powering
-   up, or join the "Pi-Star-Setup" access point ~2 minutes after boot from your
-   phone. The first boot needs internet ONCE to install OLED support.
-2. SET YOUR CALLSIGN + DMR ID at http://pi-star.local (pi-star / raspberry,
-   change it!) — the modem services REFUSE TO START until you do: a guard
-   checks the callsign AND the DMR ID before MMDVMHost / DMRGateway are
-   allowed to start, and the refusal holds even against Pi-Star's own service
-   watchdog. Do not operate this unit on the air with placeholder ID.
-3. The dependency install (pip, on a single-core Zero) can take several
-   MINUTES on first boot. A dark screen during that window is expected — it
-   retries on every boot until it succeeds. Patience, not panic.
 
-What you get: custom OLED dashboard (status / wifi / system / mascot screens,
-TX strip, liveness comet), self-healing display setup (the custom dashboard
-ALWAYS wins over MMDVMHost's stock screens), hardware watchdog + freeze-reaper
-shields,
-DMRGateway ready for BrandMeister (TGIF ships disabled — enable it in the
-dashboard if you want it).
+You do not need any special software or terminal skills. Everything is set up in a web
+browser at http://pi-star.local (default login pi-star / raspberry - change it).
+
+1. WiFi: connect this Pi to your network BEFORE (or immediately after) first boot - either
+   drop a wpa_supplicant.conf on this boot volume before powering up, or join the
+   "Pi-Star-Setup" access point ~2 minutes after boot from your phone. The first boot needs
+   internet ONCE to install the OLED screen support.
+2. SET YOUR CALLSIGN + DMR ID on the dashboard's Configuration page. The modem services
+   REFUSE TO START until you do - a built-in guard checks the callsign AND the DMR ID - so
+   do this first. The full walkthrough (including BrandMeister + TGIF) is the SETUP.md file
+   in the MortemHive repo.
+3. The dependency install (on a single-core Zero) can take several MINUTES on first boot.
+   A dark screen during that window is expected - it retries on every boot until it
+   succeeds. Patience, not panic.
+
+What you get: custom OLED dashboard (status / wifi / system / mascot screens, TX strip,
+liveness comet), self-healing display setup (the custom dashboard ALWAYS wins over
+MMDVMHost's stock screens), hardware watchdog + freeze-reaper shields, DMRGateway ready for
+BrandMeister (TGIF ships disabled - switch it on in the browser, see the setup guide).
 NOTE
 
 echo "== [7/9] PII audit — LAST, over everything injected incl. boot =="

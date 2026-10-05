@@ -1,133 +1,148 @@
 # MortemHive Hotspot — First-Time Setup
 
-You flashed the image. Here is everything else — callsign, BrandMeister, TGIF, and getting the
-OLED dashboard working the way it looks in the screenshots.
+**You do not need to know what SSH is to set this up.** Everything here can be done in a web
+browser — from a phone or a computer — at http://pi-star.local (default login: pi-star /
+raspberry — change it). Each step shows the browser way first. The SSH version is at the bottom
+for helpers; it is never required.
 
-## Before you start
+The dashboard has three areas you will use:
 
-- Your **callsign** and **DMR ID** (register at radioid.net if you have not — free, tied to your license).
-- A **BrandMeister** account (brandmeister.network) with a **Hotspot Security password** set in SelfCare.
-- A **TGIF** account (tgif.network) with your account's hotspot password (16 characters, shown in SelfCare).
+- **Configuration** — the main settings form (callsign, DMR master, display).
+- **Expert** — browser-based file editors, including "Quick Edit" forms for MMDVMHost and
+  DMR GW. These do the hard parts for you: they handle the read-only system disk and restart
+  the services after saving.
+- **Front page** — live status; scroll down to see network logins and service states.
+
+If you can log into your home router in a browser, you can do everything on this page.
 
 ## 1. First boot
 
-Connect WiFi first (or join the Pi-Star-Setup access point ~2 minutes after power-up). The first boot
-needs internet once to install the OLED software — several minutes on a Zero, and it retries on every
-boot until it succeeds. A dark screen during that window is normal.
+Connect WiFi first (or join the "Pi-Star-Setup" access point ~2 minutes after power-up). The
+first boot needs internet once to install the OLED software — several minutes on a Zero, and it
+retries on every boot until it succeeds. A dark screen during that window is normal.
 
-## 2. Callsign + DMR ID
+## 2. Callsign + DMR ID (browser)
 
-Open http://pi-star.local (default login pi-star / raspberry — change it), set your Callsign and DMR
-ID, and Apply.
+1. Open http://pi-star.local and log in.
+2. On the **Configuration** page, enter your **Callsign** and **DMR ID** (register at
+   radioid.net if you have not — free, tied to your license).
+3. Click **Apply Changes**.
 
-**The no-transmit guard:** the modem refuses to start while a placeholder identity remains. After
-setting your callsign/ID, verify nothing placeholder is left anywhere:
+The image has a built-in **no-transmit guard**: the modem refuses to start while the station
+identity is still a placeholder, so nothing transmits until this step is done. While it is not
+configured, the OLED shows "SET CALLSIGN + ID" — that is expected, not a fault.
 
-    grep -n "^Callsign=\|^Id=" /etc/mmdvmhost /etc/dmrgateway
+Also on the Configuration page: the **Radio/Modem** dropdown ("What kind of radio or modem
+hardware do you have?"). Pick the entry matching your board — the common Zero-size MMDVM_HS_Hat
+boards are "MMDVM_HS_Hat (DB9MAT & DF2ET) for Pi (GPIO)". Leaving it blank (or wrong) can have
+the dashboard rewrite the modem port settings when you apply.
 
-Every `Id=` must be your DMR ID (there are several, including in sections you may not use) and the
-callsign must be your call. If any `Id=1234567` remains (SSH; the root filesystem is read-only by
-default):
+## 3. BrandMeister (browser)
 
-    sudo mount -o remount,rw /
-    sudo sed -i 's/^Id=1234567/Id=YOUR_DMR_ID/' /etc/mmdvmhost /etc/dmrgateway    # replace YOUR_DMR_ID
-    sudo sed -i 's/^Callsign=N0CALL/Callsign=YOUR_CALL/' /etc/mmdvmhost           # replace YOUR_CALL
-    sudo sync; sudo mount -o remount,ro /
-    sudo systemctl restart mmdvmhost dmrgateway
+1. Register at brandmeister.network, then open SelfCare and set a **Hotspot Security** entry.
+2. In the Pi-Star dashboard: **Configuration** page -> **DMR Master** dropdown -> choose
+   "BrandMeister 3102 (United States)".
+3. A security box appears — put your BrandMeister Hotspot Security value there.
+4. Apply Changes.
 
-The unit starts transmitting only when the callsign AND every ID are real.
+Success check: the dashboard front page shows your network login status, and the OLED's bottom
+line shows "NET✓" once things are up.
 
-**While you are on the configuration page:** also check the **Radio/Modem** dropdown ("What kind of
-radio or modem hardware do you have?"). Pick the entry matching your board — the common Zero-size
-MMDVM_HS_Hat boards are "MMDVM_HS_Hat (DB9MAT & DF2ET) for Pi (GPIO)". Leaving it blank (or picking
-the wrong hardware) can have the dashboard rewrite the modem port settings when you Apply.
+## 4. TGIF (browser, optional — it ships switched off)
 
-## 3. BrandMeister
+1. Register at tgif.network and note your hotspot password from SelfCare.
+2. In the dashboard, open **Expert** (top menu) -> under **Quick Edit** click **DMR GW**.
+3. Find the section **[DMR Network 2]** and:
+   - set **Enabled** to `1`,
+   - put your TGIF hotspot password in the **Password** field,
+   - leave address and port as they are (they are pre-filled; port 62031).
+4. Click **Save**. The editor restarts the gateway for you.
 
-In the Pi-Star dashboard (Configuration → DMR Gateway), enter your BrandMeister **Hotspot Security
-password** for the BrandMeister network and select master **3102 (United States)**. If your dashboard
-build lacks the field, edit the file:
-
-    sudo mount -o remount,rw /
-    sudo nano /etc/dmrgateway
-
-In `[DMR Network 1]`, set the password entry to your BrandMeister Hotspot Security password
-(the shipped placeholder fails closed until you do). Save; remount ro; restart. Success text:
-
-    grep "Logged into the master" /var/log/pi-star/DMRGateway-*.log | tail
-
-## 4. TGIF
-
-TGIF ships **disabled** (opt-in). Register at tgif.network, copy your hotspot password from SelfCare:
-
-    sudo mount -o remount,rw /
-    sudo nano /etc/dmrgateway
-
-In `[DMR Network 2]`: `Enabled=1`, set the password entry to your TGIF hotspot password, and
-confirm `Port=62031` (a wrong port here silently retry-loops). Save; remount ro; restart. On the RADIO, TGIF talkgroups are dialed
-in the 7-digit form: TGIF 3157 = `4003157`. Password wrong = `Login to the master has failed`; no
-response at all = wrong address/port.
-
-Both networks up = the OLED badge shows `2NET✓`.
+On the radio, TGIF talkgroups are dialed in the 7-digit form: TGIF 3157 -> 4003157.
 
 ## 5. The OLED dashboard
 
-You should see a splash with your callsign, then rotating screens — status (last heard / talkgroup),
-Wi-Fi (dBm/SSID/IP), system (temp/uptime/load), and the mascot screen — with a small two-dot "comet"
-circling the top-right corner of every screen (a frozen comet means the Pi is struggling; that is its job).
+You should see a splash with your callsign, then rotating screens — status (last heard /
+talkgroup), Wi-Fi (dBm / SSID / IP), system (temp / uptime / load), and the mascot screen —
+with a small two-dot "comet" circling the top-right corner of every screen. If the comet
+freezes, the Pi is struggling; that is its job.
 
-The dashboard is its own service and needs the OLED software installed by the first-boot installer:
+This one is self-healing: the image keeps MMDVMHost's own display switched off, and if that
+setting ever gets flipped by accident it is corrected automatically at the next MMDVMHost
+restart. If you still see the stock "MMDVMHost" screens instead of the custom dashboard, the
+browser fix takes a minute:
 
-    systemctl status hotspot-oled --no-pager
-    journalctl -u hotspot-oled -b --no-pager | tail -20
-    python3 -c "import luma.oled; print('OLED deps OK')"
+1. **Configuration** page -> MMDVMHost section -> **Display Type** dropdown -> set it to
+   **None** — yes, None, even though your hat has an OLED. This setting means "let MMDVMHost
+   paint the screen", and the custom dashboard paints it instead.
+2. Apply Changes.
 
-- **Deps missing** ("OLED deps OK" fails): give it internet and run
-  `sudo systemctl restart hotspot-finish-setup.service`, or just reboot — the installer retries each boot.
-- **Stock MMDVMHost text screens instead of the dashboard:** In the Pi-Star dashboard's MMDVMHost
-  section there is a **Display Type** dropdown ("Choose your display type, if you have one."). It must
-  be set to **None** — yes, even though your hat has an OLED. Picking "OLED Type 3" or "OLED Type 6"
-  hands the screen back to MMDVMHost and covers the custom dashboard.
-  This one also self-heals: `Display=None` is re-asserted before MMDVMHost starts, so an accidental
-  flip normally corrects itself within one service restart. Confirm over SSH with
-  `grep "^Display=" /etc/mmdvmhost` — it must read `Display=None`. Manual fix (rarely needed now):
+Garbled or shifted screen? That is the wrong panel type for your hat: **Expert** -> Quick Edit
+-> **MMDVMHost** -> `[OLED]` section -> **Type**: `3` (SSD1306) or `6` (SH1106) -> Save.
 
-      sudo mount -o remount,rw /
-      sudo sed -i 's/^Display=.*/Display=None/' /etc/mmdvmhost
-      sudo sync; sudo mount -o remount,ro /
-      sudo systemctl restart mmdvmhost hotspot-oled
+## 6. If something looks wrong — before asking for help
 
-  To deliberately use MMDVMHost's own screens instead, disable the custom dashboard first
-  (`sudo systemctl disable --now hotspot-oled`) — the image then stops managing this setting.
+- **Look at the OLED.** It is your status display: NET✓ / NET✗ (internet), signal dBm, IP,
+  temperature, uptime. A photo of the screen usually says it all.
+- **The dashboard front page** shows whether the DMR networks are logged in; scroll down for
+  the service states.
+- **In the browser, no terminal needed:** Expert -> Quick Edit -> **DMR GW** to see your
+  networks and their enabled state; the Configuration page for callsign / master / display.
+- Getting help is much faster with: a photo of the OLED + what the front page shows.
 
-- **Garbled / shifted columns:** wrong panel type for your hat. `[OLED] Type=3` is SSD1306; try `Type=6`
-  (SH1106) or back:
+## 7. A word about "Apply Changes"
 
-      sudo mount -o remount,rw / && sudo sed -i 's/^Type=3/Type=6/' /etc/mmdvmhost && sudo sync && sudo mount -o remount,ro / && sudo systemctl restart hotspot-oled
+The Configuration page writes the config files from whatever its form currently shows. After
+ANY **Apply Changes**, it is worth glancing at these three (all in the browser):
 
-- **Screen says "SET CALLSIGN + ID":** working as designed — it clears once callsign and DMR ID are set
-  (section 2).
-- **Blank screen:** usually the deps case above, or the panel type.
+1. Configuration -> MMDVMHost section: **Display Type** is still **None**.
+2. Expert -> Quick Edit -> DMR GW: `[DMR Network 2]` still `Enabled=1` (if you use TGIF).
+3. Expert -> Quick Edit -> MMDVMHost: `[General]` still shows your real **Callsign** and not
+   a placeholder **Id**.
 
-## 6. The Pi-Star "Apply Changes" trap — read this once
+If any got reset, just set it back the same way and Save — that is all there is to it.
 
-Pi-Star's dashboard rewrites `/etc/mmdvmhost` and `/etc/dmrgateway` from whatever its web forms
-currently show. After ANY "Apply Changes", verify these survived:
+## 8. Over SSH (helpers only)
 
-    grep "^Display=" /etc/mmdvmhost                                # want: Display=None
-    sed -n '/\[DMR Network 2\]/,/^$/p' /etc/dmrgateway | grep "^Enabled="   # want: Enabled=1 if you use TGIF
-    grep -c "^Id=1234567" /etc/mmdvmhost /etc/dmrgateway           # want: 0 in both
+Everything above works in the browser; these blocks are for someone comfortable with a
+terminal. SSH in as `pi-star` (default password `raspberry`), and remember the root filesystem
+is read-only by design — remount around edits, as shown.
 
-If any got reset, re-apply the matching fix: section 5 (the **Display Type** dropdown — normally self-heals on its own),
-section 4 (TGIF), or section 2 (IDs and the **Radio/Modem** dropdown), then restart the services.
+Fix the display setting (same as section 5, for scripts):
 
-## 7. Quick reference
+    sudo mount -o remount,rw /
+    sudo sed -i 's/^Display=.*/Display=None/' /etc/mmdvmhost
+    sudo sync; sudo mount -o remount,ro /
+    sudo systemctl restart mmdvmhost hotspot-oled
 
-    systemctl is-active mmdvmhost dmrgateway hotspot-oled            # core services
-    grep "Logged into the master" /var/log/pi-star/DMRGateway-*.log  # network logins
-    /usr/local/sbin/hotspot-config-guard.sh && echo CONFIGURED       # guard state
-    journalctl -u hotspot-oled -b | tail                             # dashboard log
+Replace placeholder identity (same as section 2):
 
-Root filesystem: remount `rw` before edits, `ro` after (see above).
+    sudo mount -o remount,rw /
+    sudo sed -i 's/^Id=1234567/Id=YOUR_DMR_ID/' /etc/mmdvmhost /etc/dmrgateway
+    sudo sed -i 's/^Callsign=N0CALL/Callsign=YOUR_CALL/' /etc/mmdvmhost
+    sudo sync; sudo mount -o remount,ro /
+    sudo systemctl restart mmdvmhost dmrgateway
+
+Quick checks:
+
+    systemctl is-active mmdvmhost dmrgateway hotspot-oled              # core services
+    grep -n "^Callsign=\|^Id=" /etc/mmdvmhost /etc/dmrgateway         # identity lines
+    grep "^Display=" /etc/mmdvmhost                                    # want: Display=None
+    /usr/local/sbin/hotspot-config-guard.sh && echo CONFIGURED         # guard state
+    journalctl -u hotspot-oled -b --no-pager | tail -20                # dashboard log
+    grep "Logged into the master" /var/log/pi-star/DMRGateway-*.log    # network logins
+
+Panel present on the I2C bus (hardware sanity):
+
+    sudo i2cdetect -y 1        # the OLED answers at 0x3C
+
+## 9. Quick reference
+
+- Default login: `pi-star` / `raspberry` at http://pi-star.local — change it.
+- The no-transmit guard holds the modem off until Callsign and DMR ID are real. By design.
+- BrandMeister: Configuration -> DMR Master + security box. TGIF: Expert -> DMR GW ->
+  `[DMR Network 2]`. Display: Configuration -> MMDVMHost -> Display Type = None.
+- Root filesystem is read-only by default; the Expert editors and this guide's blocks handle
+  that for you.
 
 73 — see you on the air.
