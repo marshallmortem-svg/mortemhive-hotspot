@@ -37,6 +37,11 @@ default):
 
 The unit starts transmitting only when the callsign AND every ID are real.
 
+**While you are on the configuration page:** also check the **Radio/Modem** dropdown ("What kind of
+radio or modem hardware do you have?"). Pick the entry matching your board — the common Zero-size
+MMDVM_HS_Hat boards are "MMDVM_HS_Hat (DB9MAT & DF2ET) for Pi (GPIO)". Leaving it blank (or picking
+the wrong hardware) can have the dashboard rewrite the modem port settings when you Apply.
+
 ## 3. BrandMeister
 
 In the Pi-Star dashboard (Configuration → DMR Gateway), enter your BrandMeister **Hotspot Security
@@ -79,8 +84,12 @@ The dashboard is its own service and needs the OLED software installed by the fi
 
 - **Deps missing** ("OLED deps OK" fails): give it internet and run
   `sudo systemctl restart hotspot-finish-setup.service`, or just reboot — the installer retries each boot.
-- **Stock MMDVMHost text screens instead of the dashboard:** MMDVMHost's own display output must be
-  OFF. Check `grep "^Display=" /etc/mmdvmhost` — it must be `Display=None`:
+- **Stock MMDVMHost text screens instead of the dashboard:** In the Pi-Star dashboard's MMDVMHost
+  section there is a **Display Type** dropdown ("Choose your display type, if you have one."). It must
+  be set to **None** — yes, even though your hat has an OLED. Picking "OLED Type 3" or "OLED Type 6"
+  hands the screen back to MMDVMHost and covers the custom dashboard (the image ships it as None;
+  touching that dropdown undoes it). Confirm over SSH with `grep "^Display=" /etc/mmdvmhost` — it
+  must read `Display=None`. Fix:
 
       sudo mount -o remount,rw /
       sudo sed -i 's/^Display=.*/Display=None/' /etc/mmdvmhost
@@ -105,8 +114,8 @@ currently show. After ANY "Apply Changes", verify these survived:
     sed -n '/\[DMR Network 2\]/,/^$/p' /etc/dmrgateway | grep "^Enabled="   # want: Enabled=1 if you use TGIF
     grep -c "^Id=1234567" /etc/mmdvmhost /etc/dmrgateway           # want: 0 in both
 
-If any got reset, re-apply the matching fix from section 5 (Display), section 4 (TGIF), or section 2
-(IDs), then restart the services.
+If any got reset, re-apply the matching fix: section 5 (the **Display Type** dropdown / `Display=None`),
+section 4 (TGIF), or section 2 (IDs and the **Radio/Modem** dropdown), then restart the services.
 
 ## 7. Quick reference
 
