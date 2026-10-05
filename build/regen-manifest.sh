@@ -14,6 +14,7 @@ files = [
     ("etc/wpa_supplicant/wpa_supplicant.conf", "image/configs/wpa_supplicant.conf"),
     ("usr/local/sbin/hotspot-oled-dash.py", "image/scripts/hotspot-oled-dash.py"),
     ("usr/local/sbin/hotspot-config-guard.sh", "image/scripts/hotspot-config-guard.sh"),
+    ("usr/local/sbin/hotspot-display-assert.sh", "image/scripts/hotspot-display-assert.sh"),
     ("etc/systemd/system/hotspot-oled.service", "image/systemd/hotspot-oled.service"),
     ("etc/systemd/system/hotspot-config-guard.service", "image/systemd/hotspot-config-guard.service"),
     ("etc/systemd/system/mmdvmhost.service.d/10-mortemhive-guard.conf", "image/systemd/mmdvmhost-guard.conf"),

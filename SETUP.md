@@ -87,14 +87,18 @@ The dashboard is its own service and needs the OLED software installed by the fi
 - **Stock MMDVMHost text screens instead of the dashboard:** In the Pi-Star dashboard's MMDVMHost
   section there is a **Display Type** dropdown ("Choose your display type, if you have one."). It must
   be set to **None** — yes, even though your hat has an OLED. Picking "OLED Type 3" or "OLED Type 6"
-  hands the screen back to MMDVMHost and covers the custom dashboard (the image ships it as None;
-  touching that dropdown undoes it). Confirm over SSH with `grep "^Display=" /etc/mmdvmhost` — it
-  must read `Display=None`. Fix:
+  hands the screen back to MMDVMHost and covers the custom dashboard.
+  This one also self-heals: `Display=None` is re-asserted before MMDVMHost starts, so an accidental
+  flip normally corrects itself within one service restart. Confirm over SSH with
+  `grep "^Display=" /etc/mmdvmhost` — it must read `Display=None`. Manual fix (rarely needed now):
 
       sudo mount -o remount,rw /
       sudo sed -i 's/^Display=.*/Display=None/' /etc/mmdvmhost
       sudo sync; sudo mount -o remount,ro /
       sudo systemctl restart mmdvmhost hotspot-oled
+
+  To deliberately use MMDVMHost's own screens instead, disable the custom dashboard first
+  (`sudo systemctl disable --now hotspot-oled`) — the image then stops managing this setting.
 
 - **Garbled / shifted columns:** wrong panel type for your hat. `[OLED] Type=3` is SSD1306; try `Type=6`
   (SH1106) or back:
@@ -114,7 +118,7 @@ currently show. After ANY "Apply Changes", verify these survived:
     sed -n '/\[DMR Network 2\]/,/^$/p' /etc/dmrgateway | grep "^Enabled="   # want: Enabled=1 if you use TGIF
     grep -c "^Id=1234567" /etc/mmdvmhost /etc/dmrgateway           # want: 0 in both
 
-If any got reset, re-apply the matching fix: section 5 (the **Display Type** dropdown / `Display=None`),
+If any got reset, re-apply the matching fix: section 5 (the **Display Type** dropdown — normally self-heals on its own),
 section 4 (TGIF), or section 2 (IDs and the **Radio/Modem** dropdown), then restart the services.
 
 ## 7. Quick reference

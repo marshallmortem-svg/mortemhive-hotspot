@@ -4,9 +4,10 @@
 44b7d66ffb764d3853e023c99c203032c5a044853aed12a3277e7c1ea032443c  etc/wpa_supplicant/wpa_supplicant.conf
 ed5c01b0171a8e988e3c0c13af9ce36951149d732cbbb3ce10ce5e77f05c7b6a  usr/local/sbin/hotspot-oled-dash.py
 d85d14461ffa1752ae06ebba6ea7b054fe4fded993473031b95c47ba00a8063c  usr/local/sbin/hotspot-config-guard.sh
+d95c88deb8eb9f2419ad2144bc10a6e16405659d2c0cb42c884e1453da52ef51  usr/local/sbin/hotspot-display-assert.sh
 885886d235537d2dc1b294d4fa120e20f295758eec488a9b9c7fde27aaf0fb2f  etc/systemd/system/hotspot-oled.service
 50b1ecb48b05c041d5ee59cd49351b333a243e347cc3f2a482fbd723f30f02a6  etc/systemd/system/hotspot-config-guard.service
-08741d9cfa4a4ef8320a1271c22a675b60ad1edf7fea95ac9f2f7982f7d96612  etc/systemd/system/mmdvmhost.service.d/10-mortemhive-guard.conf
+6a319a8f2754eacf2b5adf3d13b0b709bd6b8dfccc87c57727b0eed830fb289a  etc/systemd/system/mmdvmhost.service.d/10-mortemhive-guard.conf
 f4c570efef5be9d126817f29badebbe8a475ba5e5c0bd726ea6414c1d5d7ed68  etc/systemd/system/dmrgateway.service.d/10-mortemhive-guard.conf
 97f48974feac6a2cecef33d81ee3bf703405cfd33e213b68ce1c6cbf6cdb29ac  etc/systemd/system.conf.d/watchdog.conf
 a7ff8cdbc88391d153ede049ddff1c69041a4040e504671827f7edca2976c972  etc/sysctl.d/99-wedge-autoreap.conf

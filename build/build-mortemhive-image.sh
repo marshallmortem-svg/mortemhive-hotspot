@@ -32,7 +32,9 @@ install -m 600 "$KIT/image/configs/wpa_supplicant.conf"          "$WORK/root/etc
 install -m 755 "$KIT/image/scripts/hotspot-oled-dash.py"         "$WORK/root/usr/local/sbin/hotspot-oled-dash.py"
 install -m 644 "$KIT/image/systemd/hotspot-oled.service"         "$WORK/root/etc/systemd/system/hotspot-oled.service"
 install -m 755 "$KIT/image/scripts/hotspot-config-guard.sh"      "$WORK/root/usr/local/sbin/hotspot-config-guard.sh"
+  "$WORK/root/usr/local/sbin/hotspot-display-assert.sh"
 install -m 644 "$KIT/image/systemd/hotspot-config-guard.service" "$WORK/root/etc/systemd/system/hotspot-config-guard.service"
+install -m 755 "$KIT/image/scripts/hotspot-display-assert.sh"    "$WORK/root/usr/local/sbin/hotspot-display-assert.sh"
 mkdir -p "$WORK/root/etc/systemd/system.conf.d" "$WORK/root/etc/sysctl.d"
 install -m 644 "$KIT/image/systemd/watchdog.conf"                "$WORK/root/etc/systemd/system.conf.d/watchdog.conf"
 install -m 644 "$KIT/image/systemd/99-wedge-autoreap.conf"       "$WORK/root/etc/sysctl.d/99-wedge-autoreap.conf"
@@ -110,7 +112,9 @@ that makes the current "latest" images lock up under load.
    retries on every boot until it succeeds. Patience, not panic.
 
 What you get: custom OLED dashboard (status / wifi / system / mascot screens,
-TX strip, liveness comet), hardware watchdog + freeze-reaper shields,
+TX strip, liveness comet), self-healing display setup (the custom dashboard
+ALWAYS wins over MMDVMHost's stock screens), hardware watchdog + freeze-reaper
+shields,
 DMRGateway ready for BrandMeister (TGIF ships disabled — enable it in the
 dashboard if you want it).
 NOTE

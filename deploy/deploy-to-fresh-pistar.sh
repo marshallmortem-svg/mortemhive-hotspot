@@ -34,6 +34,7 @@ $SCP "${KIT}/image/configs/aprsgateway"              "${H}:/tmp/aprsgateway"
 $SCP "${KIT}/image/configs/wpa_supplicant.conf"      "${H}:/tmp/wpa_supplicant.conf"
 $SCP "${KIT}/image/scripts/hotspot-oled-dash.py"     "${H}:/tmp/hotspot-oled-dash.py"
 $SCP "${KIT}/image/scripts/hotspot-config-guard.sh"  "${H}:/tmp/hotspot-config-guard.sh"
+$SCP "${KIT}/image/scripts/hotspot-display-assert.sh" "${H}:/tmp/hotspot-display-assert.sh"
 $SCP "${KIT}/image/systemd/hotspot-oled.service"     "${H}:/tmp/hotspot-oled.service"
 $SCP "${KIT}/image/systemd/hotspot-config-guard.service" "${H}:/tmp/hotspot-config-guard.service"
 $SCP "${KIT}/image/systemd/watchdog.conf"            "${H}:/tmp/watchdog.conf"
@@ -56,7 +57,8 @@ fi
 sudo chmod 600 /etc/wpa_supplicant/wpa_supplicant.conf
 sudo cp /tmp/hotspot-oled-dash.py /usr/local/sbin/hotspot-oled-dash.py
 sudo cp /tmp/hotspot-config-guard.sh /usr/local/sbin/hotspot-config-guard.sh
-sudo chmod 755 /usr/local/sbin/hotspot-oled-dash.py /usr/local/sbin/hotspot-config-guard.sh
+sudo cp /tmp/hotspot-display-assert.sh /usr/local/sbin/hotspot-display-assert.sh
+sudo chmod 755 /usr/local/sbin/hotspot-oled-dash.py /usr/local/sbin/hotspot-config-guard.sh /usr/local/sbin/hotspot-display-assert.sh
 sudo cp /tmp/hotspot-oled.service /etc/systemd/system/hotspot-oled.service
 sudo cp /tmp/hotspot-config-guard.service /etc/systemd/system/hotspot-config-guard.service
 sudo mkdir -p /etc/systemd/system.conf.d /etc/sysctl.d
