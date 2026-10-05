@@ -67,6 +67,19 @@ talkgroup), Wi-Fi (dBm / SSID / IP), system (temp / uptime / load), and the masc
 with a small two-dot "comet" circling the top-right corner of every screen. If the comet
 freezes, the Pi is struggling; that is its job.
 
+### What the screen can show (mini glossary)
+
+- `SET CALLSIGN + ID` — the unit is not configured yet (see section 2); it clears by itself
+  once both are real.
+- `Listening…` — configured; the modem is idle and waiting for activity.
+- `NET✓` / `NET✗` (bottom line) — internet reachability, checked every ~20 seconds.
+- `no signal?` (Wi-Fi screen) — the Wi-Fi chip has not joined a network yet.
+- `1NET✓` / `2NET✓` or just `-` (top badge) — how many DMR networks are logged in; `-` until
+  the first login. It fills in when BrandMeister/TGIF connect.
+- A frozen comet dot — the Pi is struggling; it should keep circling.
+- The custom dashboard works fine while the unit is offline (it just says so); everything
+  clears on its own once WiFi and the network logins are in place.
+
 This one is self-healing: the image keeps MMDVMHost's own display switched off, and if that
 setting ever gets flipped by accident it is corrected automatically at the next MMDVMHost
 restart. If you still see the stock "MMDVMHost" screens instead of the custom dashboard, the
