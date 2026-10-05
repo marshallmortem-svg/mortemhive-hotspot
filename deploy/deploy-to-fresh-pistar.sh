@@ -72,7 +72,7 @@ echo "install stage ok"
 REMOTE
 
 step "5/8 dependencies (needs internet; slow on a Zero — a few minutes)"
-$SSH 'sudo apt-get update -qq && sudo apt-get install -y libopenjp2-7'
+$SSH 'sudo apt-get update -qq && sudo apt-get install -y libopenjp2-7 python3-pip'
 $SSH 'sudo pip3 install --default-timeout 100 "luma.oled==3.16.0" "luma.core==2.6.0" "pillow==11.2.1" "smbus2==0.6.1" "RPi.GPIO==0.7.0"'   || $SSH 'sudo pip3 install --break-system-packages --default-timeout 100 "luma.oled==3.16.0" "luma.core==2.6.0" "pillow==11.2.1" "smbus2==0.6.1" "RPi.GPIO==0.7.0"'
 
 step "6/8 apply system config (guard-aware: modem runs only when configured)"
