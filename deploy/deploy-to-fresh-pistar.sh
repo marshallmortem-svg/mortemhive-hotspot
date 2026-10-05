@@ -4,7 +4,8 @@
 # freshly flashed Pi-Star (4.2.3) so a unit built from stock gets the custom
 # dashboard + reliability shields without re-flashing the whole image.
 # Usage:   ./deploy-to-fresh-pistar.sh <pi-ip-or-hostname> [ssh-password]
-# Default SSH password: raspberry (fresh Pi-Star image default)
+# Uses the stock Pi-Star login (user pi-star, image default) unless a
+# password is given as the second argument.
 # ============================================================================
 set -euo pipefail
 TARGET="${1:?usage: $0 <pi-ip> [ssh-password]}"
@@ -15,6 +16,10 @@ KIT="$(cd "$(dirname "$0")/.." && pwd)"
 SSH="sshpass -p ${PW} ssh -o ConnectTimeout=15 -o StrictHostKeyChecking=accept-new ${H}"
 SCP="sshpass -p ${PW} scp -o ConnectTimeout=15 -o StrictHostKeyChecking=accept-new"
 step() { echo; echo "== $1 =="; }
+
+# always relock the rootfs, even if a later step fails
+relock() { $SSH 'sudo mount -o remount,ro / 2>/dev/null' >/dev/null 2>&1 || true; }
+trap relock EXIT
 
 step "1/8 connectivity"
 $SSH 'echo connected: $(hostname) $(uname -r)' || { echo "FAILED — check IP/password/network"; exit 1; }
@@ -33,6 +38,8 @@ $SCP "${KIT}/image/systemd/hotspot-oled.service"     "${H}:/tmp/hotspot-oled.ser
 $SCP "${KIT}/image/systemd/hotspot-config-guard.service" "${H}:/tmp/hotspot-config-guard.service"
 $SCP "${KIT}/image/systemd/watchdog.conf"            "${H}:/tmp/watchdog.conf"
 $SCP "${KIT}/image/systemd/99-wedge-autoreap.conf"   "${H}:/tmp/99-wedge-autoreap.conf"
+$SCP "${KIT}/image/systemd/mmdvmhost-guard.conf"     "${H}:/tmp/mmdvmhost-guard.conf"
+$SCP "${KIT}/image/systemd/dmrgateway-guard.conf"    "${H}:/tmp/dmrgateway-guard.conf"
 
 step "4/8 install files (existing WiFi config is backed up, never clobbered)"
 $SSH 'bash -s' <<'REMOTE'
@@ -55,17 +62,21 @@ sudo cp /tmp/hotspot-config-guard.service /etc/systemd/system/hotspot-config-gua
 sudo mkdir -p /etc/systemd/system.conf.d /etc/sysctl.d
 sudo cp /tmp/watchdog.conf /etc/systemd/system.conf.d/watchdog.conf
 sudo cp /tmp/99-wedge-autoreap.conf /etc/sysctl.d/99-wedge-autoreap.conf
+sudo mkdir -p /etc/systemd/system/mmdvmhost.service.d /etc/systemd/system/dmrgateway.service.d
+sudo cp /tmp/mmdvmhost-guard.conf /etc/systemd/system/mmdvmhost.service.d/10-mortemhive-guard.conf
+sudo cp /tmp/dmrgateway-guard.conf /etc/systemd/system/dmrgateway.service.d/10-mortemhive-guard.conf
 sudo systemctl enable hotspot-oled.service hotspot-config-guard.service
 echo "install stage ok"
 REMOTE
 
 step "5/8 dependencies (needs internet; slow on a Zero — a few minutes)"
 $SSH 'sudo apt-get update -qq && sudo apt-get install -y libopenjp2-7'
-$SSH 'sudo pip3 install --default-timeout 100 "luma.oled==3.16.0" "luma.core==2.6.0"'   || $SSH 'sudo pip3 install --break-system-packages --default-timeout 100 "luma.oled==3.16.0" "luma.core==2.6.0"'
+$SSH 'sudo pip3 install --default-timeout 100 "luma.oled==3.16.0" "luma.core==2.6.0" "pillow==11.2.1" "smbus2==0.6.1" "RPi.GPIO==0.7.0"'   || $SSH 'sudo pip3 install --break-system-packages --default-timeout 100 "luma.oled==3.16.0" "luma.core==2.6.0" "pillow==11.2.1" "smbus2==0.6.1" "RPi.GPIO==0.7.0"'
 
-step "6/8 apply system config"
-$SSH 'sudo systemctl daemon-reexec; sudo sysctl --system >/dev/null 2>&1; echo sysctl-ok'
-$SSH 'sudo systemctl restart mmdvmhost dmrgateway hotspot-oled; sleep 6; systemctl is-active hotspot-oled mmdvmhost dmrgateway'
+step "6/8 apply system config (guard-aware: modem runs only when configured)"
+$SSH 'sudo systemctl daemon-reload; sudo systemctl daemon-reexec; sudo sysctl --system >/dev/null 2>&1; echo sysctl-ok'
+$SSH 'if sudo /usr/local/sbin/hotspot-config-guard.sh; then echo "station configured -> modem services may run"; else sudo systemctl stop mmdvmhost dmrgateway 2>/dev/null || true; echo "NOT CONFIGURED yet -> modem services held off (guard). Set Callsign + DMR ID in the dashboard."; fi'
+$SSH 'sudo systemctl restart hotspot-oled; sleep 5; systemctl is-active hotspot-oled || true'
 
 step "7/8 relock rootfs read-only"
 $SSH 'sudo sync; sudo mount -o remount,ro / && echo RO-OK'
@@ -74,7 +85,8 @@ step "8/8 next steps"
 cat <<'NOTE'
   * Reboot to apply everything:  ssh pi-star@<ip> 'sudo reboot'
   * Then set your callsign + DMR ID at http://pi-star.local (dashboard).
-    Until you do, the config guard keeps the transmitter off — by design.
+    Until you do, the guard refuses to start the modem services — by design
+    (it survives Pi-Star's own service watchdog).
   * Watch the OLED: splash -> dashboard with the liveness comet.
   * If the screen stays dark: journalctl -u hotspot-oled -b | tail
 NOTE

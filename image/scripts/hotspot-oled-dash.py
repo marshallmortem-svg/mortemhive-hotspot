@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 # hotspot-oled-dash.py — MortemHive Hotspot: live dashboard for the MMDVM hat OLED.
+# v1.6: 'SET CALLSIGN + ID' now also triggers while the DMR Id is still the
+#   stock placeholder (1234567) - mirrors hotspot-config-guard's checks.
 # v1.5: shows 'SET CALLSIGN + ID' until the unit is configured
 #   (pairs with hotspot-config-guard, which holds the transmitter until
 #   a real callsign is set in the Pi-Star dashboard).
@@ -52,6 +54,15 @@ def _read_identity():
 
 
 CALLSIGN, DMR_ID = _read_identity()
+
+
+def _configured(cs, did):
+    """True when a real station identity is set (mirrors hotspot-config-guard)."""
+    return cs not in ("", "N0CALL", "MT1998") and did not in ("", "1234567")
+
+
+CONFIGURED = _configured(CALLSIGN, DMR_ID)
+
 FREQ = "446.5500"
 FONT_DIR = "/usr/share/fonts/truetype/dejavu"
 IDLE_ROTATE_AFTER = 60
@@ -345,7 +356,7 @@ def draw_status(dev, st):
     d = ImageDraw.Draw(img)
     header(d, CALLSIGN, st["net"])
     draw_comet(d, 0)
-    if CALLSIGN == "N0CALL":
+    if not CONFIGURED:
         d.text((3, 19), "SET CALLSIGN + ID", font=F_BODY, fill=1)
     elif st["live"] and st["last"] and st["tg"]:
         if st["last"] == CALLSIGN or st["raw_last"] == DMR_ID:
@@ -437,7 +448,7 @@ def splash(dev, pet_wave):
     x = 2 + pet_wave.width + 6
     d.text((x, 4), CALLSIGN[:8], font=F_TITLE, fill=1)
     d.text((x, 26), "HOTSPOT", font=F_HEAD, fill=1)
-    d.text((x, 42), "dash v1.5", font=F_SMALL, fill=1)
+    d.text((x, 42), "dash v1.6", font=F_SMALL, fill=1)
     d.text((x, 53), "by nyx ♥", font=F_SMALL, fill=1)
     dev.display(img)
     time.sleep(2.5)

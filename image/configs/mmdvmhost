@@ -302,7 +302,7 @@ WaitForLan=1
 
 [FM]
 Enable=0
-Callsign=MT1998
+Callsign=N0CALL
 CallsignSpeed=20
 CallsignFrequency=1000
 CallsignTime=10

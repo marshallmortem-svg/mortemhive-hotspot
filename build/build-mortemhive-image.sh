@@ -4,7 +4,7 @@
 # RUN ON A LINUX HOST (root) with:
 #   /opt/pistar-image-build/mortemhive-kit/                    (this kit)
 #   /opt/pistar-image-build/Pi-Star_RPi_V4.2.3_18-Apr-2025.zip (base)
-# Output: /opt/pistar-image-build/MORTEMHIVE-Hotspot-v1.1.{img,zip,sha256}
+# Output: /opt/pistar-image-build/MORTEMHIVE-Hotspot-v1.2.{img,zip,sha256}
 # ============================================================================
 set -euo pipefail
 cd /opt/pistar-image-build
@@ -36,6 +36,9 @@ install -m 644 "$KIT/image/systemd/hotspot-config-guard.service" "$WORK/root/etc
 mkdir -p "$WORK/root/etc/systemd/system.conf.d" "$WORK/root/etc/sysctl.d"
 install -m 644 "$KIT/image/systemd/watchdog.conf"                "$WORK/root/etc/systemd/system.conf.d/watchdog.conf"
 install -m 644 "$KIT/image/systemd/99-wedge-autoreap.conf"       "$WORK/root/etc/sysctl.d/99-wedge-autoreap.conf"
+mkdir -p "$WORK/root/etc/systemd/system/mmdvmhost.service.d" "$WORK/root/etc/systemd/system/dmrgateway.service.d"
+install -m 644 "$KIT/image/systemd/mmdvmhost-guard.conf"         "$WORK/root/etc/systemd/system/mmdvmhost.service.d/10-mortemhive-guard.conf"
+install -m 644 "$KIT/image/systemd/dmrgateway-guard.conf"        "$WORK/root/etc/systemd/system/dmrgateway.service.d/10-mortemhive-guard.conf"
 
 echo "== [4/9] enable services + first-boot finisher =="
 mkdir -p "$WORK/root/etc/systemd/system/multi-user.target.wants"
@@ -46,16 +49,27 @@ cat > "$WORK/root/usr/local/sbin/hotspot-finish-setup.sh" <<'FIN'
 #!/bin/bash
 # One-time first-boot finisher: install the OLED dashboard python deps
 # (needs internet once). Safe to leave in place; it no-ops when satisfied.
-if python3 -c "import luma.oled" 2>/dev/null; then exit 0; fi
+# Retries on every boot until the deps are actually importable; disables
+# itself only on success (an offline first boot is not a dead end).
+if python3 -c "import luma.oled" 2>/dev/null; then
+  systemctl disable hotspot-finish-setup.service 2>/dev/null
+  exit 0
+fi
 systemctl stop hotspot-oled.service 2>/dev/null
 mount -o remount,rw / 2>/dev/null
 apt-get update -qq
 apt-get install -y libopenjp2-7
-pip3 install --default-timeout 100 "luma.oled==3.16.0" "luma.core==2.6.0" \
-  || pip3 install --break-system-packages --default-timeout 100 "luma.oled==3.16.0" "luma.core==2.6.0"
+PINS='"luma.oled==3.16.0" "luma.core==2.6.0" "pillow==11.2.1" "smbus2==0.6.1" "RPi.GPIO==0.7.0"'
+pip3 install --default-timeout 100 $PINS \
+  || pip3 install --break-system-packages --default-timeout 100 $PINS
 sync; mount -o remount,ro / 2>/dev/null
-systemctl restart hotspot-oled.service
-systemctl disable hotspot-finish-setup.service 2>/dev/null
+if python3 -c "import luma.oled" 2>/dev/null; then
+  systemctl restart hotspot-oled.service
+  systemctl disable hotspot-finish-setup.service 2>/dev/null
+  logger -t hotspot-finish-setup "OLED deps installed; finisher disabled" 2>/dev/null || true
+else
+  logger -t hotspot-finish-setup "OLED deps NOT installed (offline?) - will retry at next boot" 2>/dev/null || true
+fi
 FIN
 chmod 755 "$WORK/root/usr/local/sbin/hotspot-finish-setup.sh"
 cat > "$WORK/root/etc/systemd/system/hotspot-finish-setup.service" <<'UNIT'
@@ -77,7 +91,7 @@ echo "== [5/9] verify injected files (sha256 manifest) =="
 
 echo "== [6/9] boot-partition readme =="
 cat > "$WORK/boot/MORTEMHIVE-README.txt" <<'NOTE'
-MORTEMHIVE HOTSPOT v1.1 — flash-and-go Pi-Star image
+MORTEMHIVE HOTSPOT v1.2 — flash-and-go Pi-Star image
 Pi-Star 4.2.3 / kernel 5.10.103 — predates CVE-2026-31648, the kernel bug
 that makes the current "latest" images lock up under load.
 
@@ -87,16 +101,18 @@ that makes the current "latest" images lock up under load.
    up, or join the "Pi-Star-Setup" access point ~2 minutes after boot from your
    phone. The first boot needs internet ONCE to install OLED support.
 2. SET YOUR CALLSIGN + DMR ID at http://pi-star.local (pi-star / raspberry,
-   change it!) — the transmitter REFUSES TO TRANSMIT until you do (a guard
-   stops the modem services while the callsign is still N0CALL). Do not operate
-   this unit on the air with placeholder identification.
+   change it!) — the modem services REFUSE TO START until you do: a guard
+   checks the callsign AND the DMR ID before MMDVMHost / DMRGateway are
+   allowed to start, and the refusal holds even against Pi-Star's own service
+   watchdog. Do not operate this unit on the air with placeholder ID.
 3. The dependency install (pip, on a single-core Zero) can take several
    MINUTES on first boot. A dark screen during that window is expected — it
-   retries and comes up. Patience, not panic.
+   retries on every boot until it succeeds. Patience, not panic.
 
 What you get: custom OLED dashboard (status / wifi / system / mascot screens,
 TX strip, liveness comet), hardware watchdog + freeze-reaper shields,
-DMRGateway ready for BrandMeister + TGIF (enter your own passwords).
+DMRGateway ready for BrandMeister (TGIF ships disabled — enable it in the
+dashboard if you want it).
 NOTE
 
 echo "== [7/9] PII audit — LAST, over everything injected incl. boot =="
@@ -107,6 +123,8 @@ FILES=(
   "$WORK/root/usr/local/sbin/hotspot-config-guard.sh"
   "$WORK/root/etc/systemd/system/hotspot-oled.service" "$WORK/root/etc/systemd/system/hotspot-finish-setup.service"
   "$WORK/root/etc/systemd/system/hotspot-config-guard.service"
+  "$WORK/root/etc/systemd/system/mmdvmhost.service.d/10-mortemhive-guard.conf"
+  "$WORK/root/etc/systemd/system/dmrgateway.service.d/10-mortemhive-guard.conf"
   "$WORK/root/etc/systemd/system.conf.d/watchdog.conf" "$WORK/root/etc/sysctl.d/99-wedge-autoreap.conf"
   "$WORK/boot/MORTEMHIVE-README.txt"
 )
@@ -119,13 +137,13 @@ bash "$KIT/build/pii-audit.sh" --filename-only "$WORK/root" "$WORK/boot"
 echo "== [8/9] unmount + repack =="
 sync
 umount "$WORK/root"; umount "$WORK/boot"; losetup -d "$LOOP"; trap - EXIT
-mv "$IMG" MORTEMHIVE-Hotspot-v1.1.img
+mv "$IMG" MORTEMHIVE-Hotspot-v1.2.img
 rm -rf "$WORK"
 echo "repacking (level 1)..."
 python3 - <<'PY'
 import zipfile, os, time
-name = "MORTEMHIVE-Hotspot-v1.1.img"
-z = "MORTEMHIVE-Hotspot-v1.1.zip"
+name = "MORTEMHIVE-Hotspot-v1.2.img"
+z = "MORTEMHIVE-Hotspot-v1.2.zip"
 t0 = time.time()
 with zipfile.ZipFile(z, "w", zipfile.ZIP_DEFLATED, compresslevel=1) as f:
     f.write(name)
@@ -133,7 +151,7 @@ print("zip done in %.0fs: %d bytes" % (time.time() - t0, os.path.getsize(z)))
 PY
 
 echo "== [9/9] hashes =="
-sha256sum MORTEMHIVE-Hotspot-v1.1.img MORTEMHIVE-Hotspot-v1.1.zip > MORTEMHIVE-Hotspot-v1.1.sha256
-cat MORTEMHIVE-Hotspot-v1.1.sha256
-ls -lh MORTEMHIVE-Hotspot-v1.1.img MORTEMHIVE-Hotspot-v1.1.zip
+sha256sum MORTEMHIVE-Hotspot-v1.2.img MORTEMHIVE-Hotspot-v1.2.zip > MORTEMHIVE-Hotspot-v1.2.sha256
+cat MORTEMHIVE-Hotspot-v1.2.sha256
+ls -lh MORTEMHIVE-Hotspot-v1.2.img MORTEMHIVE-Hotspot-v1.2.zip
 echo "BUILD DONE"

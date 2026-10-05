@@ -16,6 +16,8 @@ files = [
     ("usr/local/sbin/hotspot-config-guard.sh", "image/scripts/hotspot-config-guard.sh"),
     ("etc/systemd/system/hotspot-oled.service", "image/systemd/hotspot-oled.service"),
     ("etc/systemd/system/hotspot-config-guard.service", "image/systemd/hotspot-config-guard.service"),
+    ("etc/systemd/system/mmdvmhost.service.d/10-mortemhive-guard.conf", "image/systemd/mmdvmhost-guard.conf"),
+    ("etc/systemd/system/dmrgateway.service.d/10-mortemhive-guard.conf", "image/systemd/dmrgateway-guard.conf"),
     ("etc/systemd/system.conf.d/watchdog.conf", "image/systemd/watchdog.conf"),
     ("etc/sysctl.d/99-wedge-autoreap.conf", "image/systemd/99-wedge-autoreap.conf"),
 ]

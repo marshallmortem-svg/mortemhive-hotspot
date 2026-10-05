@@ -28,15 +28,15 @@ This image is that escape hatch, packaged for everyone with the same hardware.
 - **Reliability shields, armed by default**
   - systemd feeds the hardware watchdog (`RuntimeWatchdogSec=15`, the chip's maximum) — a truly hung system reboots itself
   - `hung_task_panic=1` (120 s) + `panic=10` — D-state/SD freezes self-recover
-- **No-transmit guard** — while the callsign is still the stock `N0CALL` placeholder, a guard holds the modem services off. The unit **cannot key up** until you configure a real callsign. (47 CFR 97.119 isn't optional, even for a Raspberry Pi.)
-- **DMRGateway pre-wired**: BrandMeister 3102 + TGIF dual-network structure (you supply your own passwords)
+- **No-transmit guard** — while the callsign *or the DMR ID* is still a stock placeholder, systemd **refuses to start** the modem services (an `ExecStartPre` check on MMDVMHost + DMRGateway). The unit **cannot key up** until you configure a real callsign and ID — and the refusal holds even against Pi-Star's own service watchdog, which cannot restart a service that refuses to start. (47 CFR 97.119 isn't optional, even for a Raspberry Pi.)
+- **DMRGateway pre-wired for BrandMeister 3102** (you supply your own hotspot password). TGIF is pre-wired but ships **disabled** — enable it in the dashboard if you want it.
 - **Clean slate**: no callsign, no saved WiFi, no location, no passwords. The build runs a two-layer PII audit (`build/pii-audit.sh`) and fails if anything personal sneaks in.
 
 ## Flash it
 
-1. **Raspberry Pi Imager** → *Choose OS* → *Use custom* → select `MORTEMHIVE-Hotspot-v1.1.zip`
+1. **Raspberry Pi Imager** → *Choose OS* → *Use custom* → select `MORTEMHIVE-Hotspot-v1.2.zip`
 2. Flash an 8 GB+ card. After flashing, macOS may say the disk is "not readable" — that's the ext4 partition, it's normal.
-3. **Get it on WiFi.** Nothing is pre-configured. Best: **before first boot**, drop a `wpa_supplicant.conf` (country=US + your network block) on the boot volume. Or boot it and join the `Pi-Star-Setup` access point from your phone (~2 minutes after power-up). *The first boot needs internet once* — the OLED dependency install can't run without it (it will simply retry at the next boot, no harm done).
+3. **Get it on WiFi.** Nothing is pre-configured. Best: **before first boot**, drop a `wpa_supplicant.conf` (country=US + your network block) on the boot volume. Or boot it and join the `Pi-Star-Setup` access point from your phone (~2 minutes after power-up). *The first boot needs internet once* — the OLED dependency install can't run without it (it retries on every boot until it succeeds — no harm done).
 4. **Be patient on first boot.** The dependency install (pip, on a single-core Zero) can take several **minutes**. A dark screen during that window is expected.
 5. **Set your callsign + DMR ID** at `http://pi-star.local` (default login `pi-star` / `raspberry` — change it). Until you do, the no-transmit guard keeps the radio off — by design.
 6. Watch the OLED: splash → dashboard with the comet spinning. On an unconfigured unit the status screen shows `SET CALLSIGN + ID`.
@@ -44,7 +44,7 @@ This image is that escape hatch, packaged for everyone with the same hardware.
 Verify your download first:
 
 ```bash
-shasum -a 256 MORTEMHIVE-Hotspot-v1.1.zip    # compare against the release's .sha256
+shasum -a 256 MORTEMHIVE-Hotspot-v1.2.zip    # compare against the release's .sha256
 ```
 
 ## The fine print

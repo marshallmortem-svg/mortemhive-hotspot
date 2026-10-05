@@ -67,7 +67,7 @@ Name=BM_3102_United_States
 Location=1
 
 [DMR Network 2]
-Enabled=1
+Enabled=0
 Name=TGIF_Network
 Address=tgif.network
 Port=62031
@@ -103,7 +103,7 @@ Address=127.0.0.1
 Port=2947
 
 [APRS]
-Enable=1
+Enable=0
 Address=127.0.0.1
 Port=8673
 Description=APRS for DMRGateway
