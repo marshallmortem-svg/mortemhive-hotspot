@@ -1,23 +1,25 @@
 #!/usr/bin/env bash
 # pii-audit.sh — fail if personal data appears in the given paths.
 #
-# Two layers:
-#   1. GENERIC patterns below — safe to publish (no literal secrets here):
-#      credential-looking lines, coordinate pairs, e-mails, tokens, and
-#      US-callsign shapes (case-sensitive, so tech tokens like i2c and hex
-#      hashes don't false-positive; public attributions are allowlisted).
-#   2. Optional local deny-list at build/pii-audit.local — one literal string
-#      per line, gitignored, kept OUT of the repository on purpose. When
-#      present it is the strict gate (exact strings + filename scan).
+# Layers:
+#   1. GENERIC patterns (safe to publish, no literal secrets): credential-looking
+#      lines, coordinate pairs, e-mails, tokens, US-callsign shapes (case-sensitive
+#      so tech tokens like i2c and hex hashes don't false-positive; public
+#      attributions are allowlisted).
+#   2. Optional local deny-list at build/pii-audit.local (gitignored, NEVER in the
+#      repo). Format, one entry per line:
+#         plain string   -> content scan (case-insensitive literal)
+#         F:string       -> filename scan (substring of a file/folder NAME)
+#         #comment       -> ignored
+#      Use F: only for DISTINCTIVE identifiers (a common surname as a filename
+#      rule collides with stock timezone data).
 #
-# Usage: pii-audit.sh [path ...]   (default: the kit root)
+# Modes:
+#   pii-audit.sh [path ...]            full (generic + local list)
+#   pii-audit.sh --filename-only [p...]  names only (for whole-image sweeps)
 set -uo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
 
-# --filename-only: skip content greps; only check file NAMES against the
-# local deny-list prefixes. Useful for sweeping a whole image tree where
-# stock upstream files (with public author credits) would false-positive
-# the content rules.
 FILENAME_ONLY=0
 if [ "${1:-}" = "--filename-only" ]; then
   FILENAME_ONLY=1
@@ -40,27 +42,34 @@ clean_filter() {
     | grep -vE "$ALLOW"
 }
 
+HITS=""
 if [ "$FILENAME_ONLY" -eq 0 ]; then
   _h1=$(grep -rniE --exclude-dir=.git --exclude-dir=release "$GENERIC_CI" "${TARGETS[@]}" 2>/dev/null | clean_filter || true)
   _h2=$(grep -rnE  --exclude-dir=.git --exclude-dir=release "$GENERIC_CS" "${TARGETS[@]}" 2>/dev/null | clean_filter || true)
   HITS="$_h1"$'\n'"$_h2"
-else
-  HITS=""
 fi
 
 if [ -f "$LOCAL_LIST" ]; then
   echo "strict mode: local deny-list active"
-  while IFS= read -r pat; do
-    [ -z "$pat" ] && continue
-    case "$pat" in \#*) continue;; esac
-    if [ "$FILENAME_ONLY" -eq 0 ]; then
-      h=$(grep -rniF --exclude-dir=.git --exclude-dir=release "$pat" "${TARGETS[@]}" 2>/dev/null \
-          | grep -v "Binary file" | grep -v "[.]sha256:" \
-          | grep -v "pii-audit[.]local" || true)
-      [ -n "$h" ] && HITS="$HITS"$'\n'"$h"
-    fi
-    fh=$(find "${TARGETS[@]}" -path "*/.git" -prune -o -iname "*${pat}*" -print 2>/dev/null || true)
-    [ -n "$fh" ] && HITS="$HITS"$'\n'"FNAME: $fh"
+  while IFS= read -r entry; do
+    [ -z "$entry" ] && continue
+    case "$entry" in \#*) continue;; esac
+    case "$entry" in
+      F:*)
+        pat="${entry#F:}"
+        fh=$(find "${TARGETS[@]}" \( -path "*/.git" -o -path "*/usr/share/zoneinfo" \) -prune \
+             -o -iname "*${pat}*" -print 2>/dev/null || true)
+        [ -n "$fh" ] && HITS="$HITS"$'\n'"FNAME: $fh"
+        ;;
+      *)
+        if [ "$FILENAME_ONLY" -eq 0 ]; then
+          h=$(grep -rniF --exclude-dir=.git --exclude-dir=release "$entry" "${TARGETS[@]}" 2>/dev/null \
+              | grep -v "Binary file" | grep -v "[.]sha256:" \
+              | grep -v "pii-audit[.]local" || true)
+          [ -n "$h" ] && HITS="$HITS"$'\n'"$h"
+        fi
+        ;;
+    esac
   done < "$LOCAL_LIST"
 fi
 
