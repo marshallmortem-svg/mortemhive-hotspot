@@ -4,7 +4,7 @@
 # RUN ON A LINUX HOST (root) with:
 #   /opt/pistar-image-build/mortemhive-kit/                    (this kit)
 #   /opt/pistar-image-build/Pi-Star_RPi_V4.2.3_18-Apr-2025.zip (base)
-# Output: /opt/pistar-image-build/MORTEMHIVE-Hotspot-v1.2.{img,zip,sha256}
+# Output: /opt/pistar-image-build/MORTEMHIVE-Hotspot-v1.3.{img,zip,sha256}
 # ============================================================================
 set -euo pipefail
 cd /opt/pistar-image-build
@@ -92,7 +92,7 @@ echo "== [5/9] verify injected files (sha256 manifest) =="
 
 echo "== [6/9] boot-partition readme =="
 cat > "$WORK/boot/MORTEMHIVE-README.txt" <<'NOTE'
-MORTEMHIVE HOTSPOT v1.2 — flash-and-go Pi-Star image
+MORTEMHIVE HOTSPOT v1.3 — flash-and-go Pi-Star image
 Pi-Star 4.2.3 / kernel 5.10.103 — predates CVE-2026-31648, the kernel bug
 that makes the current "latest" images lock up under load.
 
@@ -141,13 +141,13 @@ bash "$KIT/build/pii-audit.sh" --filename-only "$WORK/root" "$WORK/boot"
 echo "== [8/9] unmount + repack =="
 sync
 umount "$WORK/root"; umount "$WORK/boot"; losetup -d "$LOOP"; trap - EXIT
-mv "$IMG" MORTEMHIVE-Hotspot-v1.2.img
+mv "$IMG" MORTEMHIVE-Hotspot-v1.3.img
 rm -rf "$WORK"
 echo "repacking (level 1)..."
 python3 - <<'PY'
 import zipfile, os, time
-name = "MORTEMHIVE-Hotspot-v1.2.img"
-z = "MORTEMHIVE-Hotspot-v1.2.zip"
+name = "MORTEMHIVE-Hotspot-v1.3.img"
+z = "MORTEMHIVE-Hotspot-v1.3.zip"
 t0 = time.time()
 with zipfile.ZipFile(z, "w", zipfile.ZIP_DEFLATED, compresslevel=1) as f:
     f.write(name)
@@ -155,7 +155,7 @@ print("zip done in %.0fs: %d bytes" % (time.time() - t0, os.path.getsize(z)))
 PY
 
 echo "== [9/9] hashes =="
-sha256sum MORTEMHIVE-Hotspot-v1.2.img MORTEMHIVE-Hotspot-v1.2.zip > MORTEMHIVE-Hotspot-v1.2.sha256
-cat MORTEMHIVE-Hotspot-v1.2.sha256
-ls -lh MORTEMHIVE-Hotspot-v1.2.img MORTEMHIVE-Hotspot-v1.2.zip
+sha256sum MORTEMHIVE-Hotspot-v1.3.img MORTEMHIVE-Hotspot-v1.3.zip > MORTEMHIVE-Hotspot-v1.3.sha256
+cat MORTEMHIVE-Hotspot-v1.3.sha256
+ls -lh MORTEMHIVE-Hotspot-v1.3.img MORTEMHIVE-Hotspot-v1.3.zip
 echo "BUILD DONE"
