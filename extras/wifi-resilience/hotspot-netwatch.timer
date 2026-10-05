@@ -1,0 +1,10 @@
+[Unit]
+Description=MortemHive network watchdog timer (every 60s after boot)
+
+[Timer]
+OnBootSec=3min
+OnUnitActiveSec=60s
+AccuracySec=5s
+
+[Install]
+WantedBy=timers.target

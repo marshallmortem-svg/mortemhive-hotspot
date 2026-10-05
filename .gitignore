@@ -1,0 +1,7 @@
+*.img
+*.zip
+*.pyc
+__pycache__/
+.DS_Store
+build/pii-audit.local
+release/

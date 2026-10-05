@@ -1,0 +1,12 @@
+[Unit]
+Description=MortemHive no-transmit-until-configured guard
+After=mmdvmhost.service dmrgateway.service
+Wants=mmdvmhost.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/sbin/hotspot-config-guard.sh
+
+[Install]
+WantedBy=multi-user.target

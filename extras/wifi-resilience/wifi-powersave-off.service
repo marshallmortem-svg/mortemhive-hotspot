@@ -1,0 +1,12 @@
+[Unit]
+Description=Disable WiFi power saving (fixes 2.4GHz silent-dropout class on Pi Zero W)
+After=network-online.target wpa_supplicant.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/bin/sh -c '/sbin/iw dev wlan0 set power_save off 2>/dev/null || /sbin/iwconfig wlan0 power off 2>/dev/null || true'
+
+[Install]
+WantedBy=multi-user.target

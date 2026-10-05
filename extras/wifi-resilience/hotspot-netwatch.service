@@ -1,0 +1,6 @@
+[Unit]
+Description=MortemHive network watchdog (one check)
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/hotspot-netwatch.sh

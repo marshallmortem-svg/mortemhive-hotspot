@@ -1,0 +1,13 @@
+[Unit]
+Description=MortemHive Hotspot OLED Dashboard
+After=mmdvmhost.service
+
+[Service]
+ExecStart=/usr/local/sbin/hotspot-oled-dash.py
+Restart=always
+RestartSec=5
+Nice=10
+User=root
+
+[Install]
+WantedBy=multi-user.target
