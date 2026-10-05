@@ -2,6 +2,8 @@
 
 ![MortemHive — a gothic hive that transmits](assets/logo-hero.png)
 
+**First time here? See [SETUP.md](SETUP.md) for the full configuration walkthrough (callsign + DMR ID, BrandMeister, TGIF, the OLED dashboard).**
+
 **A flash-and-go SD image for the Raspberry Pi Zero W (v1.1) + MMDVM hotspot hat
 (SSD1306 OLED) — a Pi-Star build that doesn't lock up like the current "latest",
 with a custom dashboard you'll actually enjoy glancing at.**
