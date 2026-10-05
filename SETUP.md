@@ -46,8 +46,8 @@ build lacks the field, edit the file:
     sudo mount -o remount,rw /
     sudo nano /etc/dmrgateway
 
-In `[DMR Network 1]` set `Password="YOUR_BM_HOTSPOT_PASSWORD"` (the shipped `"CHANGE_ME"` fails
-closed until you do). Save; remount ro; restart. Success text:
+In `[DMR Network 1]`, set the password entry to your BrandMeister Hotspot Security password
+(the shipped placeholder fails closed until you do). Save; remount ro; restart. Success text:
 
     grep "Logged into the master" /var/log/pi-star/DMRGateway-*.log | tail
 
@@ -58,8 +58,8 @@ TGIF ships **disabled** (opt-in). Register at tgif.network, copy your hotspot pa
     sudo mount -o remount,rw /
     sudo nano /etc/dmrgateway
 
-In `[DMR Network 2]`: `Enabled=1`, `Password="YOUR_TGIF_PASSWORD"`, and confirm `Port=62031` (a wrong
-port here silently retry-loops). Save; remount ro; restart. On the RADIO, TGIF talkgroups are dialed
+In `[DMR Network 2]`: `Enabled=1`, set the password entry to your TGIF hotspot password, and
+confirm `Port=62031` (a wrong port here silently retry-loops). Save; remount ro; restart. On the RADIO, TGIF talkgroups are dialed
 in the 7-digit form: TGIF 3157 = `4003157`. Password wrong = `Login to the master has failed`; no
 response at all = wrong address/port.
 
