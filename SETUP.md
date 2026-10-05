@@ -111,7 +111,9 @@ Garbled or shifted screen? That is the wrong panel type for your hat: **Expert**
   networks and their enabled state; the Configuration page for callsign / master / display.
 - Getting help is much faster with a small kit: a photo of the OLED, plus two browser
 screenshots — the **front page**, and the **Configuration page's MMDVMHost section**
-(that one shows your Display Type and which modes are on).
+(that one shows your Display Type and which modes are on). Share these privately with
+your helper only: they can show your callsign, your location, and network details —
+before posting screenshots anywhere public, crop those out.
 
 ## 7. A word about "Apply Changes"
 
