@@ -36,7 +36,7 @@ This image is that escape hatch, packaged for everyone with the same hardware.
 
 ## Flash it
 
-1. **Raspberry Pi Imager** → *Choose OS* → *Use custom* → select `MORTEMHIVE-Hotspot-v1.2.zip`
+1. **Raspberry Pi Imager** → *Choose OS* → *Use custom* → select `MORTEMHIVE-Hotspot-v1.3.zip`
 2. Flash an 8 GB+ card. After flashing, macOS may say the disk is "not readable" — that's the ext4 partition, it's normal.
 3. **Get it on WiFi.** Nothing is pre-configured. Best: **before first boot**, drop a `wpa_supplicant.conf` (country=US + your network block) on the boot volume. Or boot it and join the `Pi-Star-Setup` access point from your phone (~2 minutes after power-up). *The first boot needs internet once* — the OLED dependency install can't run without it (it retries on every boot until it succeeds — no harm done).
 4. **Be patient on first boot.** The dependency install (pip, on a single-core Zero) can take several **minutes**. A dark screen during that window is expected.
@@ -46,7 +46,7 @@ This image is that escape hatch, packaged for everyone with the same hardware.
 Verify your download first:
 
 ```bash
-shasum -a 256 MORTEMHIVE-Hotspot-v1.2.zip    # compare against the release's .sha256
+shasum -a 256 MORTEMHIVE-Hotspot-v1.3.zip    # compare against the release's .sha256
 ```
 
 ## The fine print
