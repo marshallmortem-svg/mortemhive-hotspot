@@ -32,6 +32,14 @@ The image has a built-in **no-transmit guard**: the modem refuses to start while
 identity is still a placeholder, so nothing transmits until this step is done. While it is not
 configured, the OLED shows "SET CALLSIGN + ID" — that is expected, not a fault.
 
+**One detail that stops people:** the guard watches the DMR ID in more than one place — not
+just the single box on the Configuration page. After setting your Callsign and DMR ID, open
+**Expert -> Quick Edit -> DMR GW** and make sure every `Id` field shows your real DMR ID —
+in `[DMR Network 1]`, `[DMR Network 2]`, and any `[XLX Network]` — then Save. Do the same
+inside **Expert -> Quick Edit -> MMDVMHost** (`[General]` and any other section with an
+`Id`). One leftover `1234567` anywhere keeps the modem held off — the OLED keeps saying
+`SET CALLSIGN + ID` until every one is real.
+
 Also on the Configuration page: the **Radio/Modem** dropdown ("What kind of radio or modem
 hardware do you have?"). Pick the entry matching your board — the common Zero-size MMDVM_HS_Hat
 boards are "MMDVM_HS_Hat (DB9MAT & DF2ET) for Pi (GPIO)". Leaving it blank (or wrong) can have
@@ -110,8 +118,8 @@ ANY **Apply Changes**, it is worth glancing at these three (all in the browser):
 
 1. Configuration -> MMDVMHost section: **Display Type** is still **None**.
 2. Expert -> Quick Edit -> DMR GW: `[DMR Network 2]` still `Enabled=1` (if you use TGIF).
-3. Expert -> Quick Edit -> MMDVMHost: `[General]` still shows your real **Callsign** and not
-   a placeholder **Id**.
+3. Expert -> Quick Edit -> MMDVMHost **and DMR GW**: all `Callsign` / `Id` fields
+   still show your real values (no `1234567` anywhere).
 
 If any got reset, just set it back the same way and Save — that is all there is to it.
 
